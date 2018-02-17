@@ -30,7 +30,7 @@ class Crc16 {
 
         while (true) {
             try{
-	            crc = doCrc(bytesInput.readByte(), crc);
+                crc = doCrc(bytesInput.readByte(), crc);
             }catch(err:Dynamic){
                 break;
             }

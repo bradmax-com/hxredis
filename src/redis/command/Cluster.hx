@@ -4,15 +4,15 @@ class Cluster extends RedisCommand
 {
 
     //TODO
-	public function slots():Dynamic
-	{
-		var value:Array<String> = writeData('CLUSTER', ['SLOTS']);
-		return value;
-	}
+    public function slots():Dynamic
+    {
+        var value:Array<String> = writeData('CLUSTER', ['SLOTS']);
+        return value;
+    }
 
-	public function nodes():Array<{hash:String, host:String, port:Int, from:Int, to:Int}>
-	{
-		var value:Array<String> = writeData('CLUSTER', ['NODES']).split('\n');
+    public function nodes():Array<{hash:String, host:String, port:Int, from:Int, to:Int}>
+    {
+        var value:Array<String> = writeData('CLUSTER', ['NODES']).split('\n');
         var arr:Array<{hash:String, host:String, port:Int, from:Int, to:Int}> = [];
         
         for(i in value){
@@ -33,5 +33,5 @@ class Cluster extends RedisCommand
         }
 
         return arr;
-	}
+    }
 }

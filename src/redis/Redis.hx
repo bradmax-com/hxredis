@@ -20,9 +20,9 @@ import redis.util.RedisInputStream;
 
 class Redis
 {    
-	private static inline var EOL:String = "\r\n";
-	private var socket:Socket;
-	private var connections = new Map<String, Socket>();
+    private static inline var EOL:String = "\r\n";
+    private var socket:Socket;
+    private var connections = new Map<String, Socket>();
     private var currentNodes = new Array<{hash:String, host:String, port:Int, from:Int, to:Int}>();
     private var redir = false;
 
@@ -33,7 +33,7 @@ class Redis
     public var connection:Connection = null;
     public var server:Server = null;
 
-	
+
     public function new(){
         cluster = new Cluster(writeData);
         key = new Key(writeData);	
@@ -51,20 +51,20 @@ class Redis
 
     public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 100)
     {
-		var s = new Socket();
-		s.setTimeout(timeout);
-		s.connect(new Host(host), port);        
+        var s = new Socket();
+        s.setTimeout(timeout);
+        s.connect(new Host(host), port);        
         connections.set('$host:$port', s);
         socket = s;
     }
-    
-	private function writeData(command:String, ?args:Array<String> = null, ?key:String = null):Dynamic
-	{
+
+    private function writeData(command:String, ?args:Array<String> = null, ?key:String = null):Dynamic
+    {
         args = (args == null) ? [] : args;
         var useRedirect = redir;
         redir = false;
         return writeSocketData(command, args, key, false, useRedirect);
-	}
+    }
 
     private function writeSocketData(command:String, args:Array<String>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
     {

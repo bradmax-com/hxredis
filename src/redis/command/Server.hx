@@ -2,35 +2,34 @@ package redis.command;
 
 enum SlaveConfig
 {
-	THostPort(host:String, port:Int);
-	TNoOne;
+    THostPort(host:String, port:Int);
+    TNoOne;
 }
 
 class Server extends RedisCommand
 {
 
-	public function save():Bool
-		return writeData('SAVE') == 'OK';
+    public function save():Bool
+        return writeData('SAVE') == 'OK';
+
+    public function backgroundSave():Bool
+        return writeData('BGSAVE') == 'OK';
+
+    public function lastSave():Int
+        return writeData('LASTSAVE');
+
+    public function shutdown():Void
+        writeData('SHUTDOWN');
+
+    public function backgroundRewriteAppendOnlyFile():Bool
+        return writeData('BGREWRITEAOF') == 'OK';
+
+    public function info():Array<Dynamic>
+        return writeData('INFO');
     
-	public function backgroundSave():Bool
-		return writeData('BGSAVE') == 'OK';
-    
-	public function lastSave():Int
-		return writeData('LASTSAVE');
-    
-	public function shutdown():Void
-		writeData('SHUTDOWN');
-    
-	public function backgroundRewriteAppendOnlyFile():Bool
-		return writeData('BGREWRITEAOF') == 'OK';
-    
-	public function info():Array<Dynamic>
-		return writeData('INFO');
-    
-	public function slaveOf(config:SlaveConfig):Bool
-		return writeData('SLAVEOF',
-            switch(config)
-            {
+    public function slaveOf(config:SlaveConfig):Bool
+        return writeData('SLAVEOF',
+        switch(config){
                 case THostPort(host, port):
                     [host, ""+port];
                 
@@ -39,14 +38,14 @@ class Server extends RedisCommand
             }
         ) == 'OK';
 
-	public function dbSize():Int //uwga - pokazuje tylko z obecnego socketu
-		return writeData('DBSIZE');
+    public function dbSize():Int //uwga - pokazuje tylko z obecnego socketu
+        return writeData('DBSIZE');
 
-	public function flushDB():Bool
-		return writeData('FLUSHDB') == 'OK';
+    public function flushDB():Bool
+        return writeData('FLUSHDB') == 'OK';
 
-	public function flushAll():Bool
-		return writeData('FLUSHALL') == 'OK';
+    public function flushAll():Bool
+        return writeData('FLUSHALL') == 'OK';
 
     //TODO
 	
@@ -71,10 +70,10 @@ class Server extends RedisCommand
     public function configresetstat():Void
         throw "not implemented";
 	
-	public function debugobject():Void
+    public function debugobject():Void
         throw "not implemented";
-	
-	public function debugsetfault():Void
+
+    public function debugsetfault():Void
         throw "not implemented";
 	
     public function echo():Void
