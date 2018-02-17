@@ -53,16 +53,12 @@ class Test
         //     trace(i, r.key.rename("dup1", "dup"+i));
         // // }
         // trace(r.key.expire('test_4', 3));
-        trace(r.key.set('incr', "10"));
-        trace(r.key.get('incr'));
-        trace(r.key.increment('incr'));
+        trace(r.redirect().key.set('incr', "10"));
+        trace(r.redirect().key.get('incr'));
+        trace(r.redirect().key.increment('incr'));
         trace(r.key.get('incr'));
         trace(r.key.incrementBy('incr', 10));
         trace(r.key.get('incr'));
-
-
-
-        
 
         trace(r.redirect().key.set("DUAPAAA", "100"));
 

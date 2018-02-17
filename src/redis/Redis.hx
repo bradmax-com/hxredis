@@ -55,7 +55,11 @@ class Redis
         s.setTimeout(timeout);
         s.connect(new Host(host), port);        
         connections.set('$host:$port', s);
-        socket = s;
+
+        if(socket == null)
+            socket = s;
+
+        return s;
     }
 
     private function writeData(command:String, ?args:Array<String> = null, ?key:String = null):Dynamic
@@ -70,18 +74,19 @@ class Redis
     {
         // trace(command, args);
 
+        var soc = socket;
         if(key != null && useRedirect)
-            findSlotSocket(key);
+            soc = findSlotSocket(key);
 
-        socket.output.writeString('*${args.length + 1}$EOL');
-        socket.output.writeString("$"+'${command.length}$EOL');
-        socket.output.writeString('${command}$EOL');
+        soc.output.writeString('*${args.length + 1}$EOL');
+        soc.output.writeString("$"+'${command.length}$EOL');
+        soc.output.writeString('${command}$EOL');
         for(i in args){
-            socket.output.writeString("$"+'${i.length}$EOL');
-            socket.output.writeString('${i}$EOL');
+            soc.output.writeString("$"+'${i.length}$EOL');
+            soc.output.writeString('${i}$EOL');
         }
         
-        var data = process(socket.input);
+        var data = process(soc.input);
         // trace('DATA', data);
 
         var movedString = false;
@@ -107,13 +112,15 @@ class Redis
         for(i in currentNodes){
             if(slot >= i.from && slot <= i.to){
                 if(connections.exists('${i.host}:${i.port}')){
-                    socket = connections.get('${i.host}:${i.port}');
+                    return connections.get('${i.host}:${i.port}');
                 }else{
-                    connect(i.host, i.port);
+                    return connect(i.host, i.port);
                 }
                 break;
             }
         }
+
+        return null;
     }
 
     private function process(si:Input):Dynamic
