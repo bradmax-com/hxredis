@@ -1,0 +1,6 @@
+-cp src
+-main Test
+-debug
+-cpp build
+# -neko test.n
+#-java build
