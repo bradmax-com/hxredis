@@ -3,13 +3,18 @@ package redis;
 import haxe.io.Bytes;
 import haxe.io.Input;
 import haxe.io.Output;
+import redis.command.Bit;
 import redis.command.Cluster;
 import redis.command.Connection;
+import redis.command.Hash;
 import redis.command.Key;
 import redis.command.List;
+import redis.command.PubSub;
+import redis.command.Script;
 import redis.command.Server;
 import redis.command.Set;
 import redis.command.Sort;
+import redis.command.Transaction;
 import redis.util.RedisInputStream;
 import redis.util.Slot;
 import sys.net.Host;
@@ -24,20 +29,32 @@ class Redis
     private var currentNodes = new Array<{hash:String, host:String, port:Int, from:Int, to:Int}>();
     private var redir = false;
 
+    public var bit:Bit = null;
     public var cluster:Cluster = null;
+    public var connection:Connection = null;
+    public var hash:Hash = null;
     public var key:Key = null;
     public var list:List = null;
-    public var set:Set = null;
-    public var connection:Connection = null;
+    public var pubSub:PubSub = null;
+    public var script:Script = null;
     public var server:Server = null;
+    public var set:Set = null;
+    public var sort:Sort = null;
+    public var transaction:Transaction = null;
 
     public function new(){
+        bit = new Bit(writeData);
         cluster = new Cluster(writeData);
+        connection = new Connection(writeData);	
+        hash = new Hash(writeData);
         key = new Key(writeData);	
         list = new List(writeData);	
-        set = new Set(writeData);	
-        connection = new Connection(writeData);	
+        pubSub = new PubSub(writeData);
+        script = new Script(writeData);
         server = new Server(writeData);
+        set = new Set(writeData);	
+        sort = new Sort(writeData);
+        transaction = new Transaction(writeData);
     }
 
     public function redirect():Redis
