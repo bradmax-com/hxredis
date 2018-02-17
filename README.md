@@ -1,1 +1,1 @@
-![Alt HXREDIS](assets/logo.png?raw=true "LOGO")
+![Alt HXREDIS](assets/logo.svg?raw=true "LOGO")

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 230 314" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
+    <g id="g12" transform="matrix(0.18381,0,0,-0.18381,0,314)">
+        <path id="path14" d="M625.645,1548.82L156.406,1079.59L625.645,610.371L1094.86,1079.59L625.645,1548.82" style="fill:rgb(187,19,19);fill-rule:nonzero;"/>
+        <path id="path16" d="M0,1705.23L625.645,1548.82L156.406,1079.59L0,1705.23" style="fill:rgb(231,32,32);fill-rule:nonzero;"/>
+        <path id="path18" d="M1251.29,1705.23L1094.86,1079.59L625.645,1548.82L1251.29,1705.23" style="fill:rgb(166,12,12);fill-rule:nonzero;"/>
+        <path id="path20" d="M1251.29,453.961L625.645,610.371L1094.86,1079.59L1251.29,453.961" style="fill:rgb(144,6,6);fill-rule:nonzero;"/>
+        <path id="path22" d="M0,453.961L156.406,1079.59L625.645,610.371L0,453.961" style="fill:rgb(209,25,25);fill-rule:nonzero;"/>
+        <path id="path24" d="M625.645,1548.82L0,1705.23L312.812,1705.23L625.645,1548.82" style="fill:rgb(251,38,38);fill-rule:nonzero;"/>
+        <path id="path26" d="M625.645,1548.82L1251.29,1705.23L938.457,1705.23L625.645,1548.82" style="fill:rgb(251,38,38);fill-rule:nonzero;"/>
+        <path id="path28" d="M625.645,610.371L1251.29,453.961L938.457,453.961L625.645,610.371" style="fill:rgb(187,19,19);fill-rule:nonzero;"/>
+        <path id="path30" d="M625.645,610.371L0,453.961L312.812,453.961L625.645,610.371" style="fill:rgb(144,6,6);fill-rule:nonzero;"/>
+        <path id="path32" d="M156.406,1079.59L0,453.961L0,766.773L156.406,1079.59" style="fill:rgb(255,24,24);fill-rule:nonzero;"/>
+        <path id="path34" d="M156.406,1079.59L0,1705.23L0,1392.42L156.406,1079.59" style="fill:rgb(255,24,24);fill-rule:nonzero;"/>
+        <path id="path36" d="M1094.86,1079.59L1251.29,1705.23L1251.29,1392.42L1094.86,1079.59" style="fill:rgb(124,0,0);fill-rule:nonzero;"/>
+        <path id="path38" d="M1094.86,1079.59L1251.29,453.961L1251.29,766.773L1094.86,1079.59" style="fill:rgb(124,0,0);fill-rule:nonzero;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-47.8553,3.01017)">
+        <text x="44.107px" y="275.455px" style="font-family:'Futura-Medium', 'Futura', sans-serif;font-weight:500;font-size:57px;fill:rgb(62,62,62);">HXREDIS</text>
+    </g>
+    <g transform="matrix(1.17016,-1.29914e-16,1.29914e-16,1.17016,-39.0285,-30.007)">
+        <path d="M131.954,62.685L136.985,78.167L153.264,78.167L140.094,87.736L145.124,103.219L131.954,93.65L118.784,103.219L123.814,87.736L110.644,78.167L126.923,78.167L131.954,62.685Z" style="fill:white;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,-12.7787,32.337)">
+        <circle cx="127.198" cy="126.931" r="18.514" style="fill:white;"/>
+    </g>
+    <g transform="matrix(0,-1.21749,1,0,-48.2378,199.244)">
+        <path d="M71.271,94.53L90.275,132.539L52.266,132.539L71.271,94.53Z" style="fill:white;"/>
+    </g>
+    <g transform="matrix(0.709104,-0.709104,0.709104,0.709104,-39.7862,136.05)">
+        <rect x="135.381" y="106.131" width="39.153" height="39.153" style="fill:rgb(94,0,0);"/>
+    </g>
+</svg>
