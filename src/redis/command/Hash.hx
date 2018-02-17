@@ -2,7 +2,6 @@ package redis.command;
 
 class Hash extends RedisCommand
 {
-    
     public function hdel(key :String, field :String):Bool
         return writeData('HDEL', [key, field], key) > 0;
 

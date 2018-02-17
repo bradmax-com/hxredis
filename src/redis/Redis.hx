@@ -1,26 +1,24 @@
 package redis;
 
-import sys.net.Host;
-import sys.net.Socket;
 import haxe.io.Bytes;
 import haxe.io.Input;
 import haxe.io.Output;
-
 import redis.command.Cluster;
 import redis.command.Connection;
-import redis.command.Server;
 import redis.command.Key;
 import redis.command.List;
+import redis.command.Server;
 import redis.command.Set;
 import redis.command.Sort;
-
-import redis.util.Slot;
 import redis.util.RedisInputStream;
-
+import redis.util.Slot;
+import sys.net.Host;
+import sys.net.Socket;
 
 class Redis
 {    
     private static inline var EOL:String = "\r\n";
+
     private var socket:Socket;
     private var connections = new Map<String, Socket>();
     private var currentNodes = new Array<{hash:String, host:String, port:Int, from:Int, to:Int}>();
@@ -32,7 +30,6 @@ class Redis
     public var set:Set = null;
     public var connection:Connection = null;
     public var server:Server = null;
-
 
     public function new(){
         cluster = new Cluster(writeData);
@@ -72,8 +69,7 @@ class Redis
 
     private function writeSocketData(command:String, args:Array<String>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
     {
-        // trace(command, args);
-
+        #if debug trace(command, args); #end
         var soc = socket;
         if(key != null && useRedirect)
             soc = findSlotSocket(key);
@@ -87,7 +83,7 @@ class Redis
         }
         
         var data = process(soc.input);
-        // trace('DATA', data);
+        #if debug trace('DATA', data); #end
 
         var movedString = false;
         if(Std.is(data, String)){
@@ -102,9 +98,10 @@ class Redis
         return movedString ? null : data;
     }
 
-    private function findSlotSocket(key:String){
+    private function findSlotSocket(key:String):Socket
+    {
         var slot = Slot.make(key);
-        // trace('SLOT', slot);
+
         if(currentNodes.length == 0){
             currentNodes = cluster.nodes();
         }
@@ -126,7 +123,7 @@ class Redis
     private function process(si:Input):Dynamic
     {
         var b = String.fromCharCode(si.readByte());
-        // trace('REPLY TYPE: $b');
+        #if debug trace('REPLY TYPE: $b'); #end
 
         return switch(b){
             case '+':
@@ -146,14 +143,14 @@ class Redis
 
     private function processStatusCodeReply(si:Input):String
     {
-        // trace('--------------- processStatusCodeReply');
+        #if debug trace('--------------- processStatusCodeReply'); #end
         var res = si.readLine();
         return res;
     }
 
     private function processBulkReply(si:Input):String
     {
-        // trace('--------------- processBulkReply');
+        #if debug trace('--------------- processBulkReply'); #end
         var len = RedisInputStream.readIntCrLf(si);
         if(len == -1)
             return null;
@@ -176,7 +173,7 @@ class Redis
 
     private function processMultiBulkReply(si:Input):Array<Dynamic>
     {
-        // trace('--------------- processMultiBulkReply');
+        #if debug trace('--------------- processMultiBulkReply'); #end
         var len = RedisInputStream.readIntCrLf(si);
         if(len == -1)
             return null;
@@ -196,13 +193,13 @@ class Redis
 
     private function processInteger(si:Input):Float
     {
-        // trace('--------------- processInteger');
+        #if debug trace('--------------- processInteger'); #end
         return RedisInputStream.readFloatCrLf(si);
     }
 
     private function processError(si:Input):String
     {
-        trace('--------------- processError');
+        #if debug trace('--------------- processError'); #end
         var res:String = si.readLine();
         trace('ERROR: $res');
         switch(res.split(" ")[0]){
@@ -213,5 +210,4 @@ class Redis
         }
         return res;
     }
-
 }

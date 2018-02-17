@@ -8,7 +8,6 @@ enum SlaveConfig
 
 class Server extends RedisCommand
 {
-
     public function save():Bool
         return writeData('SAVE') == 'OK';
 
@@ -38,7 +37,7 @@ class Server extends RedisCommand
             }
         ) == 'OK';
 
-    public function dbSize():Int //uwga - pokazuje tylko z obecnego socketu
+    public function dbSize():Int
         return writeData('DBSIZE');
 
     public function flushDB():Bool
@@ -47,8 +46,6 @@ class Server extends RedisCommand
     public function flushAll():Bool
         return writeData('FLUSHALL') == 'OK';
 
-    //TODO
-	
     public function clientkill():Void
         throw "not implemented";
 

@@ -85,8 +85,6 @@ class Cluster extends RedisCommand
     public function readWrite():String
         return writeData('READWRITE');
 
-
-
     private function parseNodes(input:String):Array<{hash:String, host:String, port:Int, from:Int, to:Int}>
     {
         var value = input.split('\n');
