@@ -69,9 +69,10 @@ class Redis
         var s = new Socket();
         #if cpp
         s.setTimeout(timeout);
-        // s.setFastSend(true);
+        s.setFastSend(true);
         #end
         s.connect(new Host(host), port);
+        // s.setBlocking(false);
         connections.set('$host:$port', s);
 
         if(socket == null)
@@ -119,21 +120,12 @@ class Redis
             soc.output.writeString("$"+'${(i+"").length}$EOL');
             soc.output.writeString('${i}$EOL');
         }
-        // Profiler.toc("writeSocketData");
-
-        // Profiler.tic("process");
-        // var data = process(soc.input);
+        
         var data = process(soc);
-        // Profiler.toc("process");
-        // trace(data);
-
-        // #if debug trace('DATA', data); #end
-
-        // return "OK";
 
         var movedString = false; 
         if(Std.is(data, String)){
-            movedString = (data+"").indexOf("MOVED") == 0;
+            movedString = data.indexOf("MOVED") == 0;
 
             if(movedString && moved == false){
                 currentNodes = [];
@@ -172,64 +164,14 @@ class Redis
         var bytes = Bytes.alloc(2 << 9);
         var str = new StringBuf();
 
-    private function process2(si:Input):Dynamic
-    {
-        bufferLength = 0;
-        str = new StringBuf();
-        // bytes = Bytes.alloc(2 << 9);
-        
-        // Profiler.tic("process - while");
-        while(true){
-            try{
-                bufferLength = si.readBytes(bytes, 0, chunkSize);
-                input = new haxe.io.BytesInput(bytes, 0, bufferLength);
 
-                if(input.length == 0)
-                    break;
-
-                // var s = input.readString(input.length);
-                var s = bytes.getString(0, bufferLength);
-                str.addSub(s, 0, s.length);
-
-                if(bufferLength < chunkSize)
-                    break;
-
-                // var tmpBuff = bufferLength;
-                // bufferLength = si.readBytes(bytes, bufferLength, chunkSize);
-                // tmpBuff = bufferLength - tmpBuff;
-                // str.addSub()
-                // // bytes.get(bytes.length-1)
-                // trace('bufferLength $bufferLength');
-
-
-                // if(tmpBuff < chunkSize){
-                //     break;
-                // }
-
-
-            }catch(err:Dynamic){
-                // trace("eof", err, bytes.length);
-                // trace(bytes.toString());
-                // Sys.sleep(1);
-                break;
-            }
-        }
-
-        // Profiler.toc("process - while");
-        // trace(str.toString(), str.length);
-        // trace(bytes.sub(bytes.length - 2, 2).toString(), bytes.length);
-        // return bytes.toString();
-        return str.toString();
-    }
 
     var poll = new cpp.net.Poll(100);
     private function process(soc:Socket):Dynamic
     {
-        Profiler.tic("poll");
         var i = 0;
         while(true){
-            if(poll.poll([soc], 0.00000000001).length == 0)
-            // if(Socket.select([soc], [], []).read.length == 0)
+            if(poll.poll([soc]).length == 0)
                 Sys.sleep(0.00000000001);
             else
                 break;
@@ -237,53 +179,30 @@ class Redis
             i++;
         }
 
-        
-        Profiler.toc("poll");
-        trace('__________________ $i');
-
-        Profiler.tic("byte");
         var si = soc.input;
-        var b = String.fromCharCode(si.readByte());
-        Profiler.toc("byte");
-
-        // #if debug trace('REPLY T/YPE: $b'); #end
+        var b:Int = si.readByte();
 
         var ret:Dynamic = null;
-        switch(b){
+        switch(String.fromCharCode(b)){
             case '+':
-                Profiler.tic("processStatusCodeReply");
                 ret = processStatusCodeReply(soc);
-                Profiler.toc("processStatusCodeReply");
             case '$':
-                Profiler.tic("processBulkReply");
                 ret = processBulkReply(soc);
-                Profiler.toc("processBulkReply");
             case '*':
-                Profiler.tic("processMultiBulkReply");
                 ret = processMultiBulkReply(soc);
-                Profiler.toc("processMultiBulkReply");
             case ':':
-                Profiler.tic("processInteger");
                 ret = processInteger(soc);
-                Profiler.toc("processInteger");
             case '-':
-                Profiler.tic("processError");
                 ret = processError(soc);
-                Profiler.toc("processError");
             case _:
-                Profiler.tic("b");
                 ret = b;
-                Profiler.toc("b");
         }
 
-        // trace(ret);
         return ret;
     }
 
     private function processStatusCodeReply(soc:Socket):String
     {
-        // #if debug trace('--------------- processStatusCodeReply'); #end
-
         var si = soc.input;
         var res = si.readLine();
         return res;
@@ -292,9 +211,8 @@ class Redis
     private function processBulkReply(soc:Socket):String
     {
         var si = soc.input;
-        // #if debug trace('--------------- processBulkReply'); #end
         var len = RedisInputStream.readIntCrLf(si);
-        // trace('LEN: $len');
+
         if(len == -1)
             return null;
 
@@ -303,15 +221,13 @@ class Redis
 
         while (offset < len) {
             var size = si.readBytes(buff, offset, len - offset);
-            // trace('SIZE: $size');
             if (size == -1) 
-                return null; //exception
+                return null;
             offset += size;
         }
 
         si.readByte();
         si.readByte();
-        // trace(buff.toString());
 
         return buff.toString();
     }
