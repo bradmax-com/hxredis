@@ -65,7 +65,6 @@ class Redis
 
     public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5)
     {
-        // trace('CONNECT: $host:$port');
         var s = new Socket();
         #if cpp
         s.setTimeout(timeout);
@@ -91,27 +90,11 @@ class Redis
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
     {
-        // #if debug trace(command, args); #end
         var str = "";
         var soc = socket;
         if(key != null && useRedirect)
             soc = findSlotSocket(key);
-
-
-        // str += '*${args.length + 1}$EOL';
-        // str += "$"+'${command.length}$EOL';
-        // str += '${command}$EOL';
-        // for(i in args){
-        //     str += "$"+'${(i+"").length}$EOL';
-        //     str += '${i}$EOL';
-        // }
-        // trace("1.COMMAND ------------- " + str);
-
-        // Profiler.tic("writeSocketData");
-        // trace(soc);
-        // trace(soc.output);
-        // trace(args);
-        // soc.setFastSend(true);
+            
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
         soc.output.writeString('${command}$EOL');
@@ -235,7 +218,6 @@ class Redis
     private function processMultiBulkReply(soc:Socket):Array<Dynamic>
     {
         var si = soc.input;
-        // #if debug trace('--------------- processMultiBulkReply'); #end
         var len = RedisInputStream.readIntCrLf(si);
         if(len == -1)
             return null;
@@ -255,16 +237,13 @@ class Redis
 
     private function processInteger(soc:Socket):Float
     {
-        // #if debug trace('--------------- processInteger'); #end
         var si = soc.input;
         return RedisInputStream.readFloatCrLf(si);
     }
 
     private function processError(soc:Socket):String
     {
-
         var si = soc.input;
-        // #if debug trace('--------------- processError'); #end
         var res:String = si.readLine();
         trace('ERROR: $res');
         switch(res.split(" ")[0]){

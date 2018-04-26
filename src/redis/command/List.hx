@@ -2,11 +2,11 @@ package redis.command;
 
 class List extends RedisCommand
 {
-    public function rightPush(key:String, value:Dynamic):Bool
-        return writeData('RPUSH', [key, value], key) == 'OK';
+    public function rightPush(key:String, value:Dynamic):Int
+        return writeData('RPUSH', [key, value], key);
 
-    public function leftPush(key:String, value:Dynamic):Bool
-        return writeData('LPUSH', [key, value], key) == 'OK';
+    public function leftPush(key:String, value:Dynamic):Int
+        return writeData('LPUSH', [key, value], key);
 
     public function length(key:String):Int
         return writeData('LLEN', [key], key);

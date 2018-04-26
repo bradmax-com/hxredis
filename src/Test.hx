@@ -22,7 +22,6 @@ class Test
 
         Profiler.tic("random keys - 100 x mb");
         for(i in 0...100){
-            // trace(i);
              r.redirect().key.set(i+"mb", mb);
         }
         Profiler.toc("random keys - 100 x mb");
@@ -35,4 +34,3 @@ class Test
     }
 
 }
-
