@@ -1,0 +1,23 @@
+-cp .
+-main Main
+-dce full
+
+# -js Main.js
+
+# --next
+-cp .
+-cp /Users/tkwiatek/Documents/Projects/bigsoda/videostats/src
+-main Main
+-dce full
+-lua Main.lua
+
+# --next
+# -cmd cd ../castl
+# -cmd pwd
+# -cmd castl ../lua/Main.js -o
+
+--next
+-cmd cd ../lua
+-cmd { echo 'local _hx_wrap_if_string_field, _hx_print, __haxe_IMap, __haxe_Log, __lua_Boot, require '; cat Main.lua; } >Main_fix.tmp1
+-cmd cat Main_fix.tmp1 | tail -r | tail -n +2 | tail -r > Main_fix.tmp2
+-cmd {  cat Main_fix.tmp2; echo 'return Main.main() '; } > Main_fix.lua

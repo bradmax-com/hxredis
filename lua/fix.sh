@@ -1,0 +1,1 @@
+{ echo "local _hx_wrap_if_string_field, _hx_print, __haxe_IMap, __haxe_Log, __lua_Boot, require "; cat Main.lua; } > Main_fix.lua

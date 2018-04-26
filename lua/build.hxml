@@ -1,0 +1,26 @@
+
+-cp .
+-cp /Users/tkwiatek/Documents/Projects/bigsoda/videostats/src
+-main Main
+-dce full
+-lua Main.lua
+
+# --next
+# -cmd cd ../castl
+# -cmd pwd
+# -cmd castl ../lua/Main.js -o
+
+--next
+-cmd cd ../lua
+-cmd { echo 'local __haxe_crypto_Md5, __haxe_io_BytesOutput, __haxe_io_Output, __haxe_io_BytesBuffer, __lua_Thread, __lua_UserData, __haxe_io_Error, __haxe__Int64_Int64_Impl_, __processing_structures_HyperLogLogPlusPlusData, __processing_structures_HyperLogLogPlusPlus, __processing_structures_HyperLogLog, __processing_structures_Error, __haxe_io_Bytes, __haxe_crypto_Sha1, __haxe_Int64Helper, __haxe__Int64____Int64, __haxe__Int32_Int32_Impl_, _hx_wrap_if_string_field, _hx_print, __haxe_IMap, __haxe_Log, __lua_Boot, require '; cat Main.lua; } >Main_fix.tmp1
+-cmd cat Main_fix.tmp1 | tail -r | tail -n +2 | tail -r > Main_fix.tmp2
+-cmd {  cat Main_fix.tmp2; echo 'return Main.main() '; } > Main_fix.lua
+
+# --next 
+
+# -cp .
+# -cp /Users/tkwiatek/Documents/Projects/bigsoda/videostats/src
+# -main Main
+# -dce full
+# -cpp build_lua
+

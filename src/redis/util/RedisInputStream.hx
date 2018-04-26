@@ -6,17 +6,19 @@ class RedisInputStream
 {
     public static function readFloatCrLf(i:Input):Float
     {
-        var val = "";
+        var val = new StringBuf();
         while(true){
-            var b = String.fromCharCode(i.readByte());
-            if(b == "\r"){
+            var b = i.readByte();
+            // trace(b);
+            if(b == 13){
                 i.readByte();
                 break;
             }else{
-                val += b;
+                val.addChar(b);
             }
         }
-        return Std.parseFloat(val);
+        // trace(val, val.toString(), Std.parseFloat(val.toString()));
+        return Std.parseFloat(val.toString());
     }
 
     public static function readIntCrLf(i:Input):Int

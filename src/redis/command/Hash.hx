@@ -8,7 +8,7 @@ class Hash extends RedisCommand
     public function hexists(key :String, field :String):Bool
         return writeData('HEXISTS', [key, field], key) > 0;
 
-    public function hget(key :String, field :String):String
+    public function hget(key :String, field :String):Dynamic
         return writeData('HGET', [key, field], key);
 
     public function hgetall(key :String):Map<String,String>
@@ -46,7 +46,7 @@ class Hash extends RedisCommand
         return writeData('HMSET', params, key) == 'OK';
     }
 
-    public function hset(key :String, field :String, value :String) :Bool
+    public function hset(key :String, field :String, value :Dynamic) :Bool
         return writeData('HSET', [key, field, value], key) > 0;
 
     public function hsetnx(key :String, field :String, value :String) :Bool

@@ -2,10 +2,10 @@ package redis.command;
 
 class Key extends RedisCommand
 {
-    public function set(key:String, value:String):Bool
+    public function set(key:String, value:Dynamic):Bool
         return writeData('SET', [key, value], key) == "OK";
 
-    public function get(key:String):String
+    public function get(key:String):Dynamic
         return writeData('GET', [key], key);
         
     public function exists(key:String):Bool
