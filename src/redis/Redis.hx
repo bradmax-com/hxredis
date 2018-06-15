@@ -66,18 +66,29 @@ class Redis
     public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5)
     {
         var s = new Socket();
+
         #if cpp
         s.setTimeout(timeout);
         s.setFastSend(true);
         #end
+        
         s.connect(new Host(host), port);
-        // s.setBlocking(false);
         connections.set('$host:$port', s);
 
         if(socket == null)
             socket = s;
 
         return s;
+    }
+
+    public function close(){
+        for(i in connections){
+            try{
+                i.close();
+            }catch(err:Dynamic){
+                //do nothing
+            }
+        }
     }
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null):Dynamic
