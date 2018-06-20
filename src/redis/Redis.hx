@@ -101,11 +101,10 @@ class Redis
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
     {
-        var str = "";
         var soc = socket;
         if(key != null && useRedirect)
             soc = findSlotSocket(key);
-            
+        
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
         soc.output.writeString('${command}$EOL');
@@ -165,8 +164,8 @@ class Redis
     {
         var i = 0;
         while(true){
-            if(poll.poll([soc]).length == 0)
-                Sys.sleep(0.00000000001);
+            if(Socket.select([soc], [], [], null).read.length == 0)
+                Sys.sleep(0.0001);
             else
                 break;
 
