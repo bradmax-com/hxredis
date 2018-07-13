@@ -8,7 +8,7 @@ class Test
     {
         var r = new redis.Redis();
 
-        r.connect("bradmax-redis.kelmfo.clustercfg.euc1.cache.amazonaws.com", 6379);
+        r.connect("127.0.0.1", 6379);
 
         var kb = [for(i in 0...1024)"x"].join("");
         var mb = [for(i in 0...1024)kb].join("");

@@ -9,7 +9,7 @@
       "bradmax.com"
     ],
     "releasenote": "initial release",
-    "version": "0.0.2",
+    "version": "1.0.0",
     "url": "https://github.com/bradmax-com/hxredis",
     "dependencies": {}
   }

@@ -104,6 +104,10 @@ class Redis
         var soc = socket;
         if(key != null && useRedirect)
             soc = findSlotSocket(key);
+        if(soc == null)
+            soc = socket;
+        if(soc == null)
+            return null;
         
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
