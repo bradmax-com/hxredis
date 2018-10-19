@@ -20,14 +20,23 @@ import redis.util.Slot;
 import sys.net.Host;
 import sys.net.Socket;
 
+
+
+typedef Request = {
+    var command:String;
+    @:optional var args:Array<Dynamic>;
+    @:optional var key:String;
+}
+
 class Redis
 {    
     private static inline var EOL:String = "\r\n";
 
     private var socket:Socket;
     private var connections = new Map<String, Socket>();
-    private var currentNodes = new Array<{hash:String, host:String, port:Int, from:Int, to:Int}>();
+    private var currentNodes = new Array<redis.command.Cluster.Node>();
     private var redir = false;
+    private var useCluster = false;
 
     public var bit:Bit = null;
     public var cluster:Cluster = null;
@@ -41,8 +50,12 @@ class Redis
     public var set:Set = null;
     public var sort:Sort = null;
     public var transaction:Transaction = null;
+    public var useAcumulate = false;
+    public var accumulator:Array<Request> = [];
 
-    public function new(){
+    public function new(?useCluster = false)
+    {
+        this.useCluster = useCluster;
         bit = new Bit(writeData);
         cluster = new Cluster(writeData);
         connection = new Connection(writeData);	
@@ -91,12 +104,83 @@ class Redis
         }
     }
 
-    private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null):Dynamic
+    public function accumulate()
     {
-        args = (args == null) ? [] : args;
+        useAcumulate = true;
+    }
+
+    public function flush()
+    {
+        useAcumulate = false;
+        flushAccumulator();
+    }
+
+    private function flushAccumulator()
+    {
+        var amap:Map<Socket, Array<Request>> = new Map();
         var useRedirect = redir;
         redir = false;
-        return writeSocketData(command, args, key, false, useRedirect);
+
+        //split requests to differenet sockets
+        for(i in accumulator){
+            var key = i.key;
+            var soc = socket;
+
+            if(key != null){
+                soc = findSlotSocket(key);
+                if(!amap.exists(soc)){
+                    amap.set(soc, new Array<Request>());
+                }
+                amap.get(soc).push(i);
+            }
+
+            if(soc == null){
+                soc = socket;
+                if(!amap.exists(soc)){
+                    amap.set(soc, new Array<Request>());
+                }
+                amap.get(soc).push(i);
+            }
+        }
+
+        for(soc in amap.keys()){
+            var cmd = amap.get(soc);
+            for(c in cmd){
+                writeSocketDataMulti(soc, c.command, c.args, c.key);
+            }        
+            var data = process(soc);
+        }
+    }
+
+    private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
+    {        
+        soc.output.writeString('*${args.length + 1}$EOL');
+        soc.output.writeString("$"+'${command.length}$EOL');
+        soc.output.writeString('${command}$EOL');
+
+        for(i in args){
+            soc.output.writeString("$"+'${(i+"").length}$EOL');
+            soc.output.writeString('${i}$EOL');
+        }
+
+        return null;
+    }
+
+    private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null):Dynamic
+    {
+        if(useAcumulate){
+            accumulator.push({
+                command: command, 
+                args: args,
+                key: key
+            });
+            return null;
+        }else{
+            args = (args == null) ? [] : args;
+            var useRedirect = redir;
+            redir = false;
+            return writeSocketData(command, args, key, false, useRedirect);
+        }
     }
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
@@ -135,6 +219,10 @@ class Redis
 
     private function findSlotSocket(key:String):Socket
     {
+        if(!useCluster){
+            return socket;
+        }
+
         var slot = Slot.make(key);
 
         if(currentNodes.length == 0){
@@ -142,7 +230,7 @@ class Redis
         }
 
         for(i in currentNodes){
-            if(slot >= i.from && slot <= i.to){
+            if(isSlotInNode(slot, i)){
                 if(connections.exists('${i.host}:${i.port}')){
                     return connections.get('${i.host}:${i.port}');
                 }else{
@@ -155,15 +243,31 @@ class Redis
         return null;
     }
 
-        var bufferLength = 0;
-        var input:haxe.io.BytesInput = null;
-        var chunkSize = 2 << 9;
-        var bytes = Bytes.alloc(2 << 9);
-        var str = new StringBuf();
+    private function isSlotInNode(slot:Int, node:redis.command.Cluster.Node):Bool{
+        for(range in node.slots){
+            if(range.to == null){
+                if(range.from == slot){
+                    return true;
+                }
+            }else{
+                if(slot >= range.from && slot <=range.to){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
 
 
+
+    var bufferLength = 0;
+    var input:haxe.io.BytesInput = null;
+    var chunkSize = 2 << 9;
+    var bytes = Bytes.alloc(2 << 9);
+    var str = new StringBuf();
     var poll = new cpp.net.Poll(100);
+
     private function process(soc:Socket):Dynamic
     {
         var i = 0;
@@ -259,7 +363,7 @@ class Redis
     {
         var si = soc.input;
         var res:String = si.readLine();
-        trace('ERROR: $res');
+        // trace('ERROR: $res');
         switch(res.split(" ")[0]){
             case 'CROSSSLOT':
                 return null;

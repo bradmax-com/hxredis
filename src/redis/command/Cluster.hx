@@ -20,6 +20,18 @@ abstract SetSlot(String) {
     var NODE = 'NODE';
 }
 
+typedef Range = {
+    var from:Null<Int>;
+    @:optional var to:Null<Int>;
+}
+
+typedef Node = {
+    var hash:String;
+    var host:String;
+    var port:Int;
+    var slots:Array<Range>;
+}
+
 class Cluster extends RedisCommand
 {
     public function addSlots(slots:Array<String>):Bool
@@ -85,23 +97,32 @@ class Cluster extends RedisCommand
     public function readWrite():String
         return writeData('READWRITE');
 
-    private function parseNodes(input:String):Array<{hash:String, host:String, port:Int, from:Int, to:Int}>
+    private function parseNodes(input:String):Array<Node>
     {
         var value = input.split('\n');
-        var arr:Array<{hash:String, host:String, port:Int, from:Int, to:Int}> = [];
+        var arr:Array<Node> = [];
         
         for(i in value){
             try{
                 var data:Array<String> = i.split(' ');
                 var c = data[1].split('@')[0].split(':');
-                var ft = data[8].split('-');
-                arr.push({
+                var node:Node = {
                     hash: data[0],
                     host: c[0],
                     port: Std.parseInt(c[1]),
-                    from: Std.parseInt(ft[0]),
-                    to: Std.parseInt(ft[1])
-                });
+                    slots: new Array<Range>()
+                };
+
+                for(i in 8...data.length){
+                    var range = data[i].split('-');
+                    if(range.length > 1){
+                        node.slots.push({from: Std.parseInt(range[0]), to: Std.parseInt(range[1])});
+                    }else{
+                        node.slots.push({from: Std.parseInt(range[0])});
+                    }
+
+                }
+                arr.push(node);
             }catch(err:Dynamic){
                 continue;
             }
