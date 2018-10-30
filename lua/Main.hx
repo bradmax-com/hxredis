@@ -24,7 +24,7 @@ class Main{
         var numKeys:Int = 0;
         #end
         for(i in 0...86400){
-             untyped __lua__("redis.call")('LPUSH', '1', haxe.crypto.Md5.encode(i+""));
+            untyped __lua__("redis.call")('LPUSH', '1', haxe.crypto.Md5.encode(i+""));
         }
 
 

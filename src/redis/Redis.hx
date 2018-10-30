@@ -143,13 +143,15 @@ class Redis
             }
         }
 
+        var data:Array<Dynamic> = [];
         for(soc in amap.keys()){
             var cmd = amap.get(soc);
             for(c in cmd){
-                writeSocketDataMulti(soc, c.command, c.args, c.key);
-            }        
-            var data = process(soc);
+                data.push(writeSocketDataMulti(soc, c.command, c.args, c.key));
+            }
         }
+        accumulator = [];
+        return data;
     }
 
     private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
@@ -163,7 +165,8 @@ class Redis
             soc.output.writeString('${i}$EOL');
         }
 
-        return null;
+        var data = process(soc);
+        return data;
     }
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null):Dynamic
@@ -202,18 +205,16 @@ class Redis
             soc.output.writeString('${i}$EOL');
         }
         
-        var data = process(soc);
+        var data:Dynamic = process(soc);
 
         var movedString = false; 
         if(Std.is(data, String)){
             movedString = data.indexOf("MOVED") == 0;
-
-            if(movedString && moved == false){
+            if(movedString && (moved == false)){
                 currentNodes = [];
                 return writeSocketData(command, args, key, true);
             }
         }
-
         return movedString ? null : data;
     }
 
@@ -224,7 +225,7 @@ class Redis
         }
 
         var slot = Slot.make(key);
-
+        
         if(currentNodes.length == 0){
             currentNodes = cluster.nodes();
         }
@@ -272,10 +273,11 @@ class Redis
     {
         var i = 0;
         while(true){
-            if(Socket.select([soc], [], [], null).read.length == 0)
+            if(Socket.select([soc], [], [], null).read.length == 0){
                 Sys.sleep(0.0001);
-            else
+            }else{
                 break;
+            }
 
             i++;
         }
@@ -363,7 +365,7 @@ class Redis
     {
         var si = soc.input;
         var res:String = si.readLine();
-        // trace('ERROR: $res');
+        
         switch(res.split(" ")[0]){
             case 'CROSSSLOT':
                 return null;
