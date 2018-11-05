@@ -35,7 +35,6 @@ class Redis
     private var socket:Socket;
     private var connections = new Map<String, Socket>();
     private var currentNodes = new Array<redis.command.Cluster.Node>();
-    private var redir = false;
     private var useCluster = false;
 
     public var bit:Bit = null;
@@ -68,12 +67,6 @@ class Redis
         set = new Set(writeData);	
         sort = new Sort(writeData);
         transaction = new Transaction(writeData);
-    }
-
-    public function redirect():Redis
-    {
-        redir = true;
-        return this;
     }
 
     public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5)
@@ -118,8 +111,6 @@ class Redis
     private function flushAccumulator()
     {
         var amap:Map<Socket, Array<Request>> = new Map();
-        var useRedirect = redir;
-        redir = false;
 
         //split requests to differenet sockets
         for(i in accumulator){
@@ -155,7 +146,7 @@ class Redis
     }
 
     private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
-    {        
+    {
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
         soc.output.writeString('${command}$EOL');
@@ -180,8 +171,7 @@ class Redis
             return null;
         }else{
             args = (args == null) ? [] : args;
-            var useRedirect = redir;
-            redir = false;
+            var useRedirect = useCluster;
             return writeSocketData(command, args, key, false, useRedirect);
         }
     }
