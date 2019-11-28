@@ -72,10 +72,10 @@ class Redis
         transaction = new Transaction(writeData);
     }
 
-    public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5)
+    public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5, ?maxRetry:Int = 10)
     {
         var s:Socket = null;
-        while(true){
+        while(maxRetry-- > 0){
             try{
                 s = new Socket();
 
@@ -96,7 +96,7 @@ class Redis
                 trace(err);
             }
         }
-
+        throw 'Unable to connect to host@$host:$port';
         return null;
     }
 
@@ -172,83 +172,68 @@ class Redis
 
     private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
     {
-        try{
-            soc.output.writeString('*${args.length + 1}$EOL');
-            soc.output.writeString("$"+'${command.length}$EOL');
-            soc.output.writeString('${command}$EOL');
+        soc.output.writeString('*${args.length + 1}$EOL');
+        soc.output.writeString("$"+'${command.length}$EOL');
+        soc.output.writeString('${command}$EOL');
 
-            for(i in args){
-                soc.output.writeString("$"+'${(i+"").length}$EOL');
-                soc.output.writeString('${i}$EOL');
-            }
-
-            var data = process(soc);
-            return data;
-        }catch(err:Dynamic){
-            trace(err);
+        for(i in args){
+            soc.output.writeString("$"+'${(i+"").length}$EOL');
+            soc.output.writeString('${i}$EOL');
         }
-        return null;
+
+        var data = process(soc);
+        return data;
     }
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null, ?runOnAllNodes:Bool = false):Dynamic
     {
-        try{
-            if(useAcumulate){
-                accumulator.push({
-                    command: command, 
-                    args: args,
-                    key: key
-                });
-                return null;
-            }else{
-                args = (args == null) ? [] : args;
-                var useRedirect = useCluster;
-                return writeSocketData(command, args, key, false, useRedirect, runOnAllNodes);
-            }
-        }catch(err:Dynamic){
-            trace(err);
+        if(useAcumulate){
+            accumulator.push({
+                command: command, 
+                args: args,
+                key: key
+            });
+            return null;
+        }else{
+            args = (args == null) ? [] : args;
+            var useRedirect = useCluster;
+            return writeSocketData(command, args, key, false, useRedirect, runOnAllNodes);
         }
-        return null;
     }
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false, ?runOnAllNodes:Bool = false):Dynamic
     {
-        try{
-            var soc = socket;
-            if(key != null && useRedirect){
-                soc = findSlotSocket(key);
-            }
-            if(soc == null){
-                soc = socket;
-            }
-            if(soc == null){
-                return null;
-            }
-
-            soc.output.writeString('*${args.length + 1}$EOL');
-            soc.output.writeString("$"+'${command.length}$EOL');
-            soc.output.writeString('${command}$EOL');
-
-            for(i in args){
-                soc.output.writeString("$"+'${(i+"").length}$EOL');
-                soc.output.writeString('${i}$EOL');
-            }
-            
-            var data:Dynamic = process(soc);
-
-            var movedString = false;
-            if(Std.is(data, String)){
-                movedString = data.indexOf("MOVED") == 0;
-                if(movedString && (moved == false)){
-                    currentNodes = [];
-                    return writeSocketData(command, args, key, true);
-                }
-            }
-            return movedString ? null : data;
-        }catch(err:Dynamic){
-            trace('writeSocketData $err');
+        var soc = socket;
+        if(key != null && useRedirect){
+            soc = findSlotSocket(key);
         }
-        return null;
+        if(soc == null){
+            soc = socket;
+        }
+        if(soc == null){
+            return null;
+        }
+
+        soc.output.writeString('*${args.length + 1}$EOL');
+        soc.output.writeString("$"+'${command.length}$EOL');
+        soc.output.writeString('${command}$EOL');
+
+        for(i in args){
+            soc.output.writeString("$"+'${(i+"").length}$EOL');
+            soc.output.writeString('${i}$EOL');
+        }
+        
+        var data:Dynamic = process(soc);
+
+        var movedString = false;
+        if(Std.is(data, String)){
+            movedString = data.indexOf("MOVED") == 0;
+            if(movedString && (moved == false)){
+                currentNodes = [];
+                return writeSocketData(command, args, key, true);
+            }
+        }
+        return movedString ? null : data;
     }
 
     private function findSlotSocket(key:String):Socket
@@ -298,42 +283,37 @@ class Redis
 
     private function process(soc:Socket):Dynamic
     {
-        try{
-            var i = 0;
-            while(true){
-                if(Socket.select([soc], [], [], null).read.length == 0){
-                    Sys.sleep(0.0001);
-                }else{
-                    break;
-                }
-
-                i++;
+        var i = 0;
+        while(true){
+            if(Socket.select([soc], [], [], null).read.length == 0){
+                Sys.sleep(0.0001);
+            }else{
+                break;
             }
 
-            var si = soc.input;
-            var b:Int = si.readByte();
-
-            var ret:Dynamic = null;
-            switch(String.fromCharCode(b)){
-                case '+':
-                    ret = processStatusCodeReply(soc);
-                case '$':
-                    ret = processBulkReply(soc);
-                case '*':
-                    ret = processMultiBulkReply(soc);
-                case ':':
-                    ret = processInteger(soc);
-                case '-':
-                    ret = processError(soc);
-                case _:
-                    ret = b;
-            }
-
-            return ret;
-        }catch(err:Dynamic){
-            trace(err);
+            i++;
         }
-        return null;
+
+        var si = soc.input;
+        var b:Int = si.readByte();
+
+        var ret:Dynamic = null;
+        switch(String.fromCharCode(b)){
+            case '+':
+                ret = processStatusCodeReply(soc);
+            case '$':
+                ret = processBulkReply(soc);
+            case '*':
+                ret = processMultiBulkReply(soc);
+            case ':':
+                ret = processInteger(soc);
+            case '-':
+                ret = processError(soc);
+            case _:
+                ret = b;
+        }
+
+        return ret;
     }
 
     private function processStatusCodeReply(soc:Socket):String
