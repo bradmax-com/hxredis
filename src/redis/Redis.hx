@@ -21,21 +21,14 @@ import sys.net.Host;
 import sys.net.Socket;
 
 
-
 typedef Request = {
     var command:String;
     @:optional var args:Array<Dynamic>;
     @:optional var key:String;
 }
-
 class Redis
 {    
     private static inline var EOL:String = "\r\n";
-
-    private var socket:Socket;
-    private var connections = new Map<String, Socket>();
-    private var currentNodes = new Array<redis.command.Cluster.Node>();
-    private var useCluster = false;
 
     public var bit:Bit = null;
     public var cluster:Cluster = null;
@@ -51,6 +44,16 @@ class Redis
     public var transaction:Transaction = null;
     public var useAcumulate = false;
     public var accumulator:Array<Request> = [];
+
+    private var socket:Socket;
+    private var connections:Map<String, Socket> = new Map();
+    private var currentNodes:Array<redis.command.Cluster.Node> = [];
+    private var useCluster = false;
+    private var bufferLength = 0;
+    private var input:haxe.io.BytesInput = null;
+    private var chunkSize = 2 << 9;
+    private var bytes = Bytes.alloc(2 << 9);
+    private var str = new StringBuf();
 
     public function new(?useCluster = false)
     {
@@ -71,30 +74,52 @@ class Redis
 
     public function connect(?host:String = "localhost", ?port:Int = 6379, ?timeout:Float = 5)
     {
-        var s = new Socket();
+        var s:Socket = null;
+        while(true){
+            try{
+                s = new Socket();
 
-        #if cpp
-        s.setTimeout(timeout);
-        s.setFastSend(true);
-        #end
-        
-        s.connect(new Host(host), port);
-        connections.set('$host:$port', s);
+                #if cpp
+                s.setTimeout(timeout);
+                s.setFastSend(true);
+                #end
+                
+                s.connect(new Host(host), port);
+                connections.set('$host:$port', s);
 
-        if(socket == null)
-            socket = s;
+                socket = s;
 
-        return s;
+                return s;
+            }catch(err:Dynamic){
+                cleanClose(s);
+                Sys.sleep(1);
+                trace(err);
+            }
+        }
+
+        return null;
+    }
+
+    function cleanClose(s:Socket){
+        s.setTimeout(0.01);
+        try{
+            while(true){
+                s.input.readByte();
+            }
+        }catch(err:Dynamic){}
+        s.shutdown(true, true);
+        s.close();
     }
 
     public function close(){
         for(i in connections){
             try{
-                i.close();
-            }catch(err:Dynamic){
-                //do nothing
-            }
+                cleanClose(i);
+            }catch(err:Dynamic){}
         }
+        connections = new Map();
+        currentNodes = [];
+        socket = null;
     }
 
     public function accumulate()
@@ -147,65 +172,83 @@ class Redis
 
     private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
     {
-        soc.output.writeString('*${args.length + 1}$EOL');
-        soc.output.writeString("$"+'${command.length}$EOL');
-        soc.output.writeString('${command}$EOL');
+        try{
+            soc.output.writeString('*${args.length + 1}$EOL');
+            soc.output.writeString("$"+'${command.length}$EOL');
+            soc.output.writeString('${command}$EOL');
 
-        for(i in args){
-            soc.output.writeString("$"+'${(i+"").length}$EOL');
-            soc.output.writeString('${i}$EOL');
-        }
-
-        var data = process(soc);
-        return data;
-    }
-
-    private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null):Dynamic
-    {
-        if(useAcumulate){
-            accumulator.push({
-                command: command, 
-                args: args,
-                key: key
-            });
-            return null;
-        }else{
-            args = (args == null) ? [] : args;
-            var useRedirect = useCluster;
-            return writeSocketData(command, args, key, false, useRedirect);
-        }
-    }
-
-    private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false):Dynamic
-    {
-        var soc = socket;
-        if(key != null && useRedirect)
-            soc = findSlotSocket(key);
-        if(soc == null)
-            soc = socket;
-        if(soc == null)
-            return null;
-        
-        soc.output.writeString('*${args.length + 1}$EOL');
-        soc.output.writeString("$"+'${command.length}$EOL');
-        soc.output.writeString('${command}$EOL');
-
-        for(i in args){
-            soc.output.writeString("$"+'${(i+"").length}$EOL');
-            soc.output.writeString('${i}$EOL');
-        }
-        
-        var data:Dynamic = process(soc);
-
-        var movedString = false; 
-        if(Std.is(data, String)){
-            movedString = data.indexOf("MOVED") == 0;
-            if(movedString && (moved == false)){
-                currentNodes = [];
-                return writeSocketData(command, args, key, true);
+            for(i in args){
+                soc.output.writeString("$"+'${(i+"").length}$EOL');
+                soc.output.writeString('${i}$EOL');
             }
+
+            var data = process(soc);
+            return data;
+        }catch(err:Dynamic){
+            trace(err);
         }
-        return movedString ? null : data;
+        return null;
+    }
+
+    private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null, ?runOnAllNodes:Bool = false):Dynamic
+    {
+        try{
+            if(useAcumulate){
+                accumulator.push({
+                    command: command, 
+                    args: args,
+                    key: key
+                });
+                return null;
+            }else{
+                args = (args == null) ? [] : args;
+                var useRedirect = useCluster;
+                return writeSocketData(command, args, key, false, useRedirect, runOnAllNodes);
+            }
+        }catch(err:Dynamic){
+            trace(err);
+        }
+        return null;
+    }
+
+    private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false, ?runOnAllNodes:Bool = false):Dynamic
+    {
+        try{
+            var soc = socket;
+            if(key != null && useRedirect){
+                soc = findSlotSocket(key);
+            }
+            if(soc == null){
+                soc = socket;
+            }
+            if(soc == null){
+                return null;
+            }
+
+            soc.output.writeString('*${args.length + 1}$EOL');
+            soc.output.writeString("$"+'${command.length}$EOL');
+            soc.output.writeString('${command}$EOL');
+
+            for(i in args){
+                soc.output.writeString("$"+'${(i+"").length}$EOL');
+                soc.output.writeString('${i}$EOL');
+            }
+            
+            var data:Dynamic = process(soc);
+
+            var movedString = false;
+            if(Std.is(data, String)){
+                movedString = data.indexOf("MOVED") == 0;
+                if(movedString && (moved == false)){
+                    currentNodes = [];
+                    return writeSocketData(command, args, key, true);
+                }
+            }
+            return movedString ? null : data;
+        }catch(err:Dynamic){
+            trace('writeSocketData $err');
+        }
+        return null;
     }
 
     private function findSlotSocket(key:String):Socket
@@ -234,6 +277,10 @@ class Redis
         return null;
     }
 
+    private function allClusterNodes():Array<{host:String, port:Int}> {
+        return null;
+    }
+
     private function isSlotInNode(slot:Int, node:redis.command.Cluster.Node):Bool{
         for(range in node.slots){
             if(range.to == null){
@@ -249,49 +296,44 @@ class Redis
         return false;
     }
 
-
-
-
-    var bufferLength = 0;
-    var input:haxe.io.BytesInput = null;
-    var chunkSize = 2 << 9;
-    var bytes = Bytes.alloc(2 << 9);
-    var str = new StringBuf();
-    var poll = new cpp.net.Poll(100);
-
     private function process(soc:Socket):Dynamic
     {
-        var i = 0;
-        while(true){
-            if(Socket.select([soc], [], [], null).read.length == 0){
-                Sys.sleep(0.0001);
-            }else{
-                break;
+        try{
+            var i = 0;
+            while(true){
+                if(Socket.select([soc], [], [], null).read.length == 0){
+                    Sys.sleep(0.0001);
+                }else{
+                    break;
+                }
+
+                i++;
             }
 
-            i++;
+            var si = soc.input;
+            var b:Int = si.readByte();
+
+            var ret:Dynamic = null;
+            switch(String.fromCharCode(b)){
+                case '+':
+                    ret = processStatusCodeReply(soc);
+                case '$':
+                    ret = processBulkReply(soc);
+                case '*':
+                    ret = processMultiBulkReply(soc);
+                case ':':
+                    ret = processInteger(soc);
+                case '-':
+                    ret = processError(soc);
+                case _:
+                    ret = b;
+            }
+
+            return ret;
+        }catch(err:Dynamic){
+            trace(err);
         }
-
-        var si = soc.input;
-        var b:Int = si.readByte();
-
-        var ret:Dynamic = null;
-        switch(String.fromCharCode(b)){
-            case '+':
-                ret = processStatusCodeReply(soc);
-            case '$':
-                ret = processBulkReply(soc);
-            case '*':
-                ret = processMultiBulkReply(soc);
-            case ':':
-                ret = processInteger(soc);
-            case '-':
-                ret = processError(soc);
-            case _:
-                ret = b;
-        }
-
-        return ret;
+        return null;
     }
 
     private function processStatusCodeReply(soc:Socket):String
