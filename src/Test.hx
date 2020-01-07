@@ -26,6 +26,7 @@ class Test
     {
         var r = new redis.Redis(false);
         var i = 0;
+        // r.connect("127.0.0.1", 6379);
 
         while(true){
             r.connect("127.0.0.1", 6379);
@@ -34,15 +35,28 @@ class Test
             r.close();
         }
 
-        // r.accumulate();
-        // r.key.set("a", 1);
-        // r.key.set("b", 1);
-        // r.key.set("c", 1);
-        // r.key.set("d", 1);
-        // r.key.set("e", 1);
-        // r.key.set("f", 1);
+        r.accumulate();
+        r.key.set("aaa", 1);
+        r.key.set("bbb", 2);
+        r.key.set("ccc", 3);
+        r.key.set("d", 4);
+        r.key.set("e", 5);
+        r.key.set("f", 6);
+        r.key.set("g", 7);
         // r.key.set("g", 1);
-        // r.flush();
+        // r.key.set("g", 1);
+        // r.key.set("g", 1);
+        // r.key.set("g", 1);
+        // r.key.set("g", 1);
+        r.key.get("a");
+        r.key.get("b");
+        r.key.get("c");
+        r.key.get("d");
+        r.key.get("e");
+        r.key.get("f");
+        r.key.get("g");
+        var resp = r.flush();
+        trace(resp);
         // trace("-------");
         // trace(r.key.get("a"));
         // trace("-------");

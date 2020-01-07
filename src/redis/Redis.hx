@@ -130,7 +130,7 @@ class Redis
     public function flush()
     {
         useAcumulate = false;
-        flushAccumulator();
+        return flushAccumulator();
     }
 
     private function flushAccumulator()
@@ -138,6 +138,8 @@ class Redis
         var amap:Map<Socket, Array<Request>> = new Map();
 
         //split requests to differenet sockets
+        var orginalIndexes:Array<Socket> = [];
+        var idx = 0;
         for(i in accumulator){
             var key = i.key;
             var soc = socket;
@@ -157,32 +159,52 @@ class Redis
                 }
                 amap.get(soc).push(i);
             }
+
+            orginalIndexes[idx++] = soc;
         }
 
         var data:Array<Dynamic> = [];
+        
         for(soc in amap.keys()){
             var cmd = amap.get(soc);
+            var buffer = new haxe.io.BytesBuffer();
+            
             for(c in cmd){
-                data.push(writeSocketDataMulti(soc, c.command, c.args, c.key));
+                writeSocketDataMulti(buffer, c.command, c.args, c.key);
+            }
+            var bytes = buffer.getBytes();
+            soc.output.write(bytes);
+            var processed = process(soc, cmd.length);
+            var outArr:Array<Dynamic> = [];
+
+            if(Std.is(processed, Array) == true){
+                outArr = processed;
+            }else{
+                outArr = [processed];
+            }
+
+            var idx = 0;
+            for(i in 0...orginalIndexes.length){
+                if(soc == orginalIndexes[i]){
+                    data[i] = processed[idx++];
+                }
             }
         }
+
         accumulator = [];
         return data;
     }
 
-    private function writeSocketDataMulti(soc: Socket, command:String, args:Array<Dynamic>, ?key:String):Dynamic
+    private function writeSocketDataMulti(buffer: haxe.io.BytesBuffer, command:String, args:Array<Dynamic>, ?key:String)
     {
-        soc.output.writeString('*${args.length + 1}$EOL');
-        soc.output.writeString("$"+'${command.length}$EOL');
-        soc.output.writeString('${command}$EOL');
+        buffer.addString('*${args.length + 1}$EOL');
+        buffer.addString("$"+'${command.length}$EOL');
+        buffer.addString('${command}$EOL');
 
         for(i in args){
-            soc.output.writeString("$"+'${(i+"").length}$EOL');
-            soc.output.writeString('${i}$EOL');
+            buffer.addString("$"+'${(i+"").length}$EOL');
+            buffer.addString('${i}$EOL');
         }
-
-        var data = process(soc);
-        return data;
     }
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null, ?runOnAllNodes:Bool = false):Dynamic
@@ -281,7 +303,7 @@ class Redis
         return false;
     }
 
-    private function process(soc:Socket):Dynamic
+    private function process(soc:Socket, ?count:Int=1):Dynamic
     {
         var i = 0;
         while(true){
@@ -312,7 +334,15 @@ class Redis
             case _:
                 ret = b;
         }
-
+        
+        if(count > 1){
+            var retArr = [ret];
+            while(count-- > 1){
+                ret = process(soc);
+                retArr.push(ret);
+            }
+            return(retArr);
+        }
         return ret;
     }
 
