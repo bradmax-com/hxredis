@@ -174,19 +174,19 @@ class Redis
             }
             var bytes = buffer.getBytes();
             soc.output.write(bytes);
-            var processed = process(soc, cmd.length);
+            var rsp = process(soc, cmd.length);
             var outArr:Array<Dynamic> = [];
 
-            if(Std.is(processed, Array) == true){
-                outArr = processed;
+            if(Std.is(rsp, Array) == true){
+                outArr = [].concat(cast rsp);
             }else{
-                outArr = [processed];
+                outArr = [rsp];
             }
 
             var idx = 0;
             for(i in 0...orginalIndexes.length){
                 if(soc == orginalIndexes[i]){
-                    data[i] = processed[idx++];
+                    data[i] = outArr[idx++];
                 }
             }
         }
