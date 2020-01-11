@@ -312,19 +312,23 @@ class Redis
     private function process(soc:Socket, ?count:Int=1):Dynamic
     {
         var i = 0;
+        trace("process", 1);
         while(true){
+
+            trace("process", 2, i);
             if(Socket.select([soc], [], [], null).read.length == 0){
                 Sys.sleep(0.0001);
             }else{
                 break;
             }
-            trace("process", i);
             i++;
         }
 
+        trace("process", 3);
         var si = soc.input;
         var b:Int = si.readByte();
 
+        trace("process", 4);
         var ret:Dynamic = null;
         switch(String.fromCharCode(b)){
             case '+':
@@ -341,6 +345,7 @@ class Redis
                 ret = b;
         }
         
+        trace("process", 5, b);
         if(count > 1){
             var retArr = [ret];
             while(count-- > 1){
@@ -349,6 +354,7 @@ class Redis
             }
             return(retArr);
         }
+        trace("process", 6);
         return ret;
     }
 
