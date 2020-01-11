@@ -93,7 +93,7 @@ class Redis
             }catch(err:Dynamic){
                 cleanClose(s);
                 Sys.sleep(1);
-                trace(err);
+                trace("REDIS CONNECT ERROR: " + err);
             }
         }
         throw 'Unable to connect to host@$host:$port';
@@ -210,7 +210,6 @@ class Redis
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null, ?runOnAllNodes:Bool = false):Dynamic
     {
-        trace("writeData", command, args, key);
         if(useAcumulate){
             accumulator.push({
                 command: command, 
@@ -227,7 +226,6 @@ class Redis
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false, ?runOnAllNodes:Bool = false):Dynamic
     {
-        trace("writeSocketData", 1);
         var soc = socket;
         if(key != null && useRedirect){
             soc = findSlotSocket(key);
@@ -238,19 +236,18 @@ class Redis
         if(soc == null){
             return null;
         }
-        trace("writeSocketData", 2);
+        
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
         soc.output.writeString('${command}$EOL');
-        trace("writeSocketData", 3);
+
         for(i in args){
             soc.output.writeString("$"+'${(i+"").length}$EOL');
             soc.output.writeString('${i}$EOL');
         }
-        trace("writeSocketData", 4);
+        
         var data:Dynamic = process(soc);
-        trace(data, command);
-        trace("writeSocketData", 5);
+        
         var movedString = false;
         if(Std.is(data, String)){
             var dataStr:String = cast(data, String);
@@ -260,7 +257,7 @@ class Redis
                 return writeSocketData(command, args, key, true);
             }
         }
-        trace("writeSocketData", 6);
+        
         return movedString ? null : data;
     }
 
@@ -312,10 +309,7 @@ class Redis
     private function process(soc:Socket, ?count:Int=1):Dynamic
     {
         var i = 0;
-        trace("process", 1);
         while(true){
-
-            trace("process", 2, i);
             if(Socket.select([soc], [], [], null).read.length == 0){
                 Sys.sleep(0.0001);
             }else{
@@ -324,11 +318,8 @@ class Redis
             i++;
         }
 
-        trace("process", 3);
         var si = soc.input;
         var b:Int = si.readByte();
-
-        trace("process", 4);
         var ret:Dynamic = null;
         switch(String.fromCharCode(b)){
             case '+':
@@ -345,7 +336,6 @@ class Redis
                 ret = b;
         }
         
-        trace("process", 5, b);
         if(count > 1){
             var retArr = [ret];
             while(count-- > 1){
@@ -354,7 +344,7 @@ class Redis
             }
             return(retArr);
         }
-        trace("process", 6);
+        
         return ret;
     }
 
