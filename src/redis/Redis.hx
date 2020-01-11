@@ -210,6 +210,7 @@ class Redis
 
     private function writeData(command:String, ?args:Array<Dynamic> = null, ?key:String = null, ?runOnAllNodes:Bool = false):Dynamic
     {
+        trace("writeData", command, args, key);
         if(useAcumulate){
             accumulator.push({
                 command: command, 
