@@ -247,7 +247,7 @@ class Redis
         }
         
         var data:Dynamic = process(soc);
-        trace(data);
+        trace(data, command);
 
         var movedString = false;
         if(Std.is(data, String)){
