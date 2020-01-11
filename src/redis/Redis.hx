@@ -130,7 +130,8 @@ class Redis
     public function flush()
     {
         useAcumulate = false;
-        return flushAccumulator();
+        var resp:Array<Dynamic> = flushAccumulator();
+        return resp;
     }
 
     private function flushAccumulator()
@@ -249,7 +250,8 @@ class Redis
 
         var movedString = false;
         if(Std.is(data, String)){
-            movedString = data.indexOf("MOVED") == 0;
+            var dataStr:String = cast(data, String);
+            movedString = dataStr.indexOf("MOVED") == 0;
             if(movedString && (moved == false)){
                 currentNodes = [];
                 return writeSocketData(command, args, key, true);
