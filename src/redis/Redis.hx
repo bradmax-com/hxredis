@@ -227,6 +227,7 @@ class Redis
 
     private function writeSocketData(command:String, args:Array<Dynamic>, ?key:String, ?moved:Bool = false, ?useRedirect:Bool = false, ?runOnAllNodes:Bool = false):Dynamic
     {
+        trace("writeSocketData", 1);
         var soc = socket;
         if(key != null && useRedirect){
             soc = findSlotSocket(key);
@@ -237,19 +238,19 @@ class Redis
         if(soc == null){
             return null;
         }
-
+        trace("writeSocketData", 2);
         soc.output.writeString('*${args.length + 1}$EOL');
         soc.output.writeString("$"+'${command.length}$EOL');
         soc.output.writeString('${command}$EOL');
-
+        trace("writeSocketData", 3);
         for(i in args){
             soc.output.writeString("$"+'${(i+"").length}$EOL');
             soc.output.writeString('${i}$EOL');
         }
-        
+        trace("writeSocketData", 4);
         var data:Dynamic = process(soc);
         trace(data, command);
-
+        trace("writeSocketData", 5);
         var movedString = false;
         if(Std.is(data, String)){
             var dataStr:String = cast(data, String);
@@ -259,6 +260,7 @@ class Redis
                 return writeSocketData(command, args, key, true);
             }
         }
+        trace("writeSocketData", 6);
         return movedString ? null : data;
     }
 
