@@ -197,6 +197,7 @@ class Redis
         }
 
         accumulator = [];
+        trace('REDIS resp: ${data}');
         return data;
     }
 
