@@ -141,6 +141,8 @@ class Redis
         //split requests to differenet sockets
         var orginalIndexes:Array<Socket> = [];
         var idx = 0;
+        trace('-----------------------------------');
+        trace('REDIS send accumulator: ${accumulator}');
         for(i in accumulator){
             var key = i.key;
             var soc = socket;
@@ -166,6 +168,7 @@ class Redis
 
         var data:Array<Dynamic> = [];
         
+        trace('REDIS send sockets');
         for(soc in amap.keys()){
             var cmd = amap.get(soc);
             var buffer = new haxe.io.BytesBuffer();
@@ -174,6 +177,7 @@ class Redis
                 writeSocketDataMulti(buffer, c.command, c.args, c.key);
             }
             var bytes = buffer.getBytes();
+            trace('REDIS write bytes: ${bytes.length}');
             soc.output.write(bytes);
             var rsp = process(soc, cmd.length);
             var outArr:Array<Dynamic> = [];
