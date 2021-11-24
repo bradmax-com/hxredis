@@ -1,5 +1,6 @@
 package redis;
 
+import cpp.ConstCharStar;
 import haxe.io.Bytes;
 import haxe.io.Input;
 import haxe.io.Output;
