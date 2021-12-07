@@ -355,7 +355,7 @@ class Redis
         return res;
     }
 
-    private function processBulkReply(soc:Socket):String
+    private function processBulkReply(soc:Socket):Bytes
     {
         var si = soc.input;
         var len = RedisInputStream.readIntCrLf(si);
@@ -376,7 +376,7 @@ class Redis
         si.readByte();
         si.readByte();
 
-        return buff.toString();
+        return buff;
     }
 
     private function processMultiBulkReply(soc:Socket):Array<Dynamic>
