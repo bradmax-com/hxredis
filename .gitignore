@@ -1,3 +1,24 @@
 build/
 Test-debug
 Test
+
+# intellij project files
+.idea
+hxredis.iml
+
+# netbeans project files
+nbproject
+
+# zend studio for eclipse project files
+.buildpath
+.project
+.settings
+
+# windows thumbnail cache
+Thumbs.db
+
+# Mac DS_Store Files
+.DS_Store
+
+# vscode
+.vscode/settings.json
