@@ -1,0 +1,14 @@
+{
+	"name": "@bradmax/hxredis",
+	"version": "0.0.0",
+	"author": "bradmax",
+	"license": "UNDEFINED",
+	"publishConfig": {
+		"access": "restricted"
+	},
+	"description": "Library shared between projects",
+	"files": [
+		"./src/**",
+		"build.hxml"
+	]
+}
