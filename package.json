@@ -9,6 +9,7 @@
 	"description": "Library shared between projects",
 	"files": [
 		"./src/**",
-		"build.hxml"
+		"build.hxml",
+		"haxelib.json"
 	]
 }
